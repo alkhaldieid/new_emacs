@@ -1,0 +1,602 @@
+#+STARTUP: overview
+#+TITLE: PhD Emacs
+
+* Evil
+Can't function without vim motion keys. So, Evil mode and evil stuff have to be setup first!.
+** Evil Mode
+    Install and enable evil-mode 
+   #+BEGIN_SRC emacs-lisp :results silent
+     (use-package evil
+       :init
+       (progn
+	 (setq evil-undo-system 'undo-tree)
+	 ;; `evil-collection' assumes `evil-want-keybinding' is set to
+	 ;; `nil' before loading `evil' and `evil-collection'
+	 ;; @see https://github.com/emacs-evil/evil-collection#installation
+	 (setq evil-want-keybinding nil)
+	 (setq evil-want-C-i-jump nil))
+       :config
+	 (evil-mode))
+   #+END_SRC
+
+** evil-org
+   The main desired functionality of the org indent mode is the ability to automatically indent and number the next numbered item in a numbered list when "o" is pressed in the normal mode.
+   Evil-org mode enable us to move org-headings with vim keys with the meta key.
+   To auto-indent the subheading enable the org-indent-mode.
+   #+begin_src emacs-lisp :results silent
+     (use-package evil-org
+       ;;:after org
+       :config
+       (progn
+	 (require 'evil-org-agenda)
+	 (evil-org-mode)
+	 (evil-org-agenda-set-keys)))
+   #+end_src
+
+** org-agenda
+   #+BEGIN_SRC emacs-lisp :results silent
+     (setq org-treat-S-cursor-todo-selection-as-state-change nil)
+
+     (setq org-todo-keywords
+	   (quote ((sequence "TODO(t)" "NEXT(n)" "In Progress(p)" "|" "DONE(d)" "CANCELLED(c)")
+		   (sequence  "PHONE" "MEETING" "EMAIL" "HOLD(h@/!)"))))
+
+     (setq org-todo-keyword-faces
+	 (quote (("TODO" :foreground "red" :weight bold)
+		 ("NEXT" :foreground "purple" :weight bold)
+		 ("In Progress" :foreground "magenta" :weight bold)
+		 ("EMAIL" :foreground "red" :weight bold)
+		 ("MEETING" :foreground "red" :weight bold)
+		 ("PHONE" :foreground "red" :weight bold)
+		 ("HOLD" :foreground "blue" :weight bold)
+		 ("DONE" :foreground "forest green" :weight bold)
+		 ("CANCELLED" :foreground "forest green" :weight bold))))
+     (setq org-use-fast-todo-selection t)
+
+     (setq org-treat-S-cursor-todo-selection-as-state-change nil)
+   #+END_SRC
+** Undo tree                                                         :global:
+Replicate the undo/redo functionality in vim. 
+   #+BEGIN_SRC emacs-lisp :results silent
+     (use-package undo-tree
+       :config
+       (global-undo-tree-mode 1))
+   #+END_SRC
+** WM in emacs
+ #+BEGIN_SRC emacs-lisp :results silent
+ (use-package eyebrowse
+   :diminish eyebrowse-mode
+   :config (progn
+             (define-key eyebrowse-mode-map (kbd "C-w j") 'eyebrowse-switch-to-window-config-1)
+             (define-key eyebrowse-mode-map (kbd "C-w k") 'eyebrowse-switch-to-window-config-2)
+             (define-key eyebrowse-mode-map (kbd "C-w l") 'eyebrowse-switch-to-window-config-3)
+             (define-key eyebrowse-mode-map (kbd "C-w ;") 'eyebrowse-switch-to-window-config-4)
+             (eyebrowse-mode t)
+             (setq eyebrowse-new-workspace t)))
+ #+END_SRC
+
+** Evil Leader Keybindings
+*** Leader                                                         :global:
+    Install the evil-leader, enable it globally and set the leader key
+#+BEGIN_SRC emacs-lisp :results silent
+  (use-package evil-leader
+    :config
+    (progn
+      (global-evil-leader-mode)
+      (evil-leader/set-leader "<SPC>")
+    ))
+#+END_SRC
+*** Global leader map
+#+BEGIN_SRC emacs-lisp :results silent
+  (evil-leader/set-key
+    "<SPC> " 'execute-extended-command
+    "fs" 'save-buffer
+    "ff" 'find-file
+    "fr" 'recentf-open-files
+    "fS" 'bookmark-set
+    "fj" 'bookmark-jump
+
+    ;; frames
+    "Fd" 'delete-frame
+    "Fn" 'make-frame
+
+    ;; buffers
+    "bb" 'consult-buffer
+    "bd" 'kill-buffer
+    "bp" 'previous-buffer
+    "bn" 'next-buffer
+    "bi" 'ibuffer
+
+
+    ;; windows
+    "wl" 'evil-window-right
+    "wL" 'evil-window-move-far-right
+    "wh" 'evil-window-left
+    "wH" 'evil-window-move-far-left
+    "wk" 'evil-window-up
+    "wj" 'evil-window-down
+    "wd" 'evil-window-delete
+    "wv" 'evil-window-vsplit
+    "ws" 'evil-window-split
+    "wm" 'delete-other-windows
+    "w=" 'evil-window-increase-width
+
+    ;; workspaces
+    "1" 'eyebrowse-switch-to-window-config-1
+    "2" 'eyebrowse-switch-to-window-config-2
+    "3" 'eyebrowse-switch-to-window-config-3
+    "4" 'eyebrowse-switch-to-window-config-4
+    "5" 'eyebrowse-switch-to-window-config-5
+    "6" 'eyebrowse-switch-to-window-config-6
+    "7" 'eyebrowse-switch-to-window-config-7
+    "8" 'eyebrowse-switch-to-window-config-8
+    "9" 'eyebrowse-switch-to-window-config-9
+
+    ;; evil-nerd-commenter
+    "ci" 'evilnc-comment-or-uncomment-lines
+    "cl" 'evilnc-quick-comment-or-uncomment-to-the-line
+    "cc" 'evilnc-copy-and-comment-lines
+    "cc" 'evilnc-copy-and-comment-lines
+    "cp" 'evilnc-comment-or-uncomment-paragraphs
+    "cr" 'comment-or-uncomment-region
+    "cv" 'evilnc-toggle-invert-comment-line-by-line
+
+    ;; zoom-in and out
+    "=" 'text-scale-increase
+    "-" 'text-scale-decrease
+
+    ;; emacs quitting
+    "qs" 'save-buffers-kill-emacs
+
+    ;; project compilation
+    "cfcd" 'ae/compile-dwm
+
+    ;; writeroom keybindings
+    "dw" 'olivetti-mode
+    "d=" 'olivetti-expand
+    "d-" 'olivetti-shrink
+
+    ;; org agenda keybindings
+    "gg" 'magit-status
+
+    ;; org roam
+    "nl" 'org-roam-buffer-toggle
+    "nf" 'org-roam-node-find
+    ;; "ng" 'org-roam-show-graph
+    ;; "ni" 'org-roam-insert
+    "ni" 'org-roam-node-insert
+    "ns" 'org-roam-db-sync
+    "ngt" 'org-roam-dailies-goto-today
+    "ngT" 'org-roam-dailies-goto-tomorrow
+    "ngy" 'org-roam-dailies-goto-yesterday
+    "ngn" 'org-roam-node-visit
+    "ngd" 'org-roam-dailies-find-date
+    "nct" 'org-roam-dailies-capture-today
+    "ncy" 'org-roam-dailies-capture-yesterday
+
+    ;; org-roam-bibtex
+    "na" 'orb-note-actions
+
+    ;; insert commands
+    "ir" 'org-ref-insert-link
+    "in" 'org-roam-node-insert
+    "ip" 'academic-phrases
+    "is" 'academic-phrases-by-section
+
+    ;; apps
+    "aa" 'org-agenda
+    "ae" 'mu4e
+    "aw" 'eww
+
+    ;; orgmode
+
+    "oop" 'org-pomodoro
+    "ooe" 'org-set-effort
+    "t" 'modus-themes-toggle
+    ;; help funcs
+    "hf" 'describe-function
+    "hk" 'describe-key
+    "hv" 'describe-variable
+    "hm" 'describe-mode
+    "hb" 'describe-bindings
+    )
+#+END_SRC
+*** orgmode leader map
+ #+BEGIN_SRC emacs-lisp :results silent
+   (evil-leader/set-key-for-mode 'org-mode
+     "e" 'my/org-set-effort-in-pomodoros
+     "s" 'org-toggle-narrow-to-subtree)
+   (defun my/org-set-effort-in-pomodoros (n)
+     (interactive "nHow many pomodoros: ")
+     (let ((mins-per-pomodoro 25))
+       (org-set-effort nil (org-duration-from-minutes (* n mins-per-pomodoro)))))
+ #+END_SRC
+
+*** In Progress Set evil-leader keybindings for projectile using space p
+#+BEGIN_SRC emacs-lisp :results silent
+  (evil-leader/set-key
+    "pp" 'projectile-switch-open-project
+    "pf" 'projectile-find-file
+    "pd" 'projectile-find-dir
+    "pg" 'projectile-grep
+    )
+#+END_SRC
+
+** Which-key
+ #+BEGIN_SRC emacs-lisp :results silent
+ (use-package which-key
+   :config
+     (setq which-key-idle-delay 0.3)
+     (setq which-key-popup-type 'frame)
+     (which-key-mode)
+     (which-key-setup-minibuffer)
+     (set-face-attribute 'which-key-local-map-description-face nil
+	:weight 'bold))
+ #+END_SRC
+
+** yasnippet configs
+   Yasnippets make it easy to insert most commenly typed code snippets.
+ #+BEGIN_SRC emacs-lisp :results silent
+ (use-package yasnippet
+   :config
+   (yas-global-mode 1))
+ #+END_SRC
+** Text Display
+*** Wrap the text around the edge without changing the content of the file.
+#+BEGIN_SRC emacs-lisp :results silent
+  (use-package visual-fill-column
+    :config
+    (global-visual-fill-column-mode 1))
+  (add-hook 'org-mode-hook 'visual-fill-column-mode)
+  ;(setq 'fill-column 120)
+#+END_SRC
+
+* company mode
+  #+BEGIN_SRC emacs-lisp :results silent
+    (use-package company
+      :config
+      (progn
+	(add-hook 'after-init-hook 'global-company-mode)
+	(setq company-idle-delay 0)))
+  #+END_SRC
+
+* Other Editor Related Configurations
+** auto-save and backup files
+   To avoid cluttering directories you work on with FILENAME~ files, save your auto-save, backup and undo-tree files in specific directories.
+#+BEGIN_SRC emacs-lisp :results silent
+    (setq auto-save-file-name-transforms
+	  '((".*" "~/.emacs.d/auto-save-list/" t))
+	  backup-directory-alist
+	  '(("." . "~/.emacs.d/backups/"))
+	  undo-tree-history-directory-alist
+	  '(("." . "~/.emacs.d/undo-tree/")))
+#+END_SRC
+
+** y for yes and n for no
+#+BEGIN_SRC emacs-lisp :results silent
+(fset 'yes-or-no-p 'y-or-n-p)
+#+END_SRC
+** Follow the symlink without asking
+#+BEGIN_SRC emacs-lisp :results silent
+(setq vc-follow-symlinks t)
+#+END_SRC
+** Return Follow Links with RET
+#+BEGIN_SRC emacs-lisp :results silent
+;; unbind RET first and enable org-return-follow-link
+(with-eval-after-load 'evil-maps
+    (define-key evil-motion-state-map (kbd "RET") nil))
+(setq org-return-follows-link  t)
+#+END_SRC
+** visual line mode hook
+#+BEGIN_SRC emacs-lisp :results silent
+  (global-visual-line-mode)
+#+END_SRC
+* Vertico + consult + orderless + Marginalia + Embark
+** Vertico installation
+#+BEGIN_SRC emacs-lisp :results silent
+  ;; Enable vertico
+  (use-package vertico
+    :init
+    (vertico-mode)
+    (vertico-mouse-mode)
+
+    ;; Different scroll margin
+    ;; (setq vertico-scroll-margin 0)
+
+    ;; Show more candidates
+    (setq vertico-count 25)
+
+    ;; Grow and shrink the Vertico minibuffer
+    (setq vertico-resize t)
+
+    ;; Optionally enable cycling for `vertico-next' and `vertico-previous'.
+    ;; (setq vertico-cycle t)
+    :bind (:map vertico-map
+		("RET" . vertico-directory-enter)
+		("DEL" . vertico-directory-delete-char)
+		("M-DEL" . vertico-directory-delete-word)
+		("M-q" . 'vertico-quick-insert)
+		("C-q" . 'vertico-quick-exit))
+
+
+    ;; Tidy shadowed file names
+    :hook (rfn-eshadow-update-overlay . vertico-directory-tidy))
+  
+#+END_SRC
+** Marginalia
+  Rich Annotations for candidates. 
+  #+BEGIN_SRC emacs-lisp :results silent
+    (use-package marginalia
+      :config
+      (marginalia-mode))
+  #+END_SRC
+** Orderless
+#+BEGIN_SRC emacs-lisp :results silent
+;; Optionally use the `orderless' completion style.
+(use-package orderless
+  :init
+  ;; Configure a custom style dispatcher (see the Consult wiki)
+  ;; (setq orderless-style-dispatchers '(+orderless-consult-dispatch orderless-affix-dispatch)
+  ;;       orderless-component-separator #'orderless-escapable-split-on-space)
+  (setq completion-styles '(orderless basic)
+        completion-category-defaults nil
+        completion-category-overrides '((file (styles partial-completion)))))
+#+END_SRC
+** Consult 
+#+BEGIN_SRC emacs-lisp :results silent
+(use-package consult)
+#+END_SRC
+* Appearance
+** Options
+#+BEGIN_SRC emacs-lisp :results silent
+  (set-scroll-bar-mode nil)
+  (menu-bar-mode 0)
+  (tool-bar-mode 0)
+#+END_SRC
+
+** Themes
+*** General Theme
+#+BEGIN_SRC emacs-lisp :results silent
+  (use-package leuven-theme)
+  (use-package ef-themes)
+  (use-package dracula-theme)
+  (use-package parchment-theme )
+  (use-package cloud-theme) 
+  (use-package moe-theme)                  
+  (use-package zenburn-theme)              
+  (use-package monokai-theme)              
+  (use-package gruvbox-theme)              
+  (use-package ample-theme)                
+  (use-package ample-zen-theme)            
+  (use-package alect-themes)               
+  (use-package tao-theme)                  
+  (use-package poet-theme)                 
+  (use-package modus-themes)               
+  (use-package modus-themes)               
+  (use-package faff-theme)                 
+  (use-package color-theme-modern)        
+  (use-package leuven-theme)               
+  (use-package solarized-theme)            
+
+  (load-theme 'leuven-dark t)
+  ;;(global-hl-line-mode t) ;; This highlights the current line in the buffer
+
+  (use-package beacon ;; This applies a beacon effect to the highlighted line
+      :config
+      (beacon-mode 1))
+#+END_SRC
+
+#+RESULTS:
+
+*** Modeline
+#+BEGIN_SRC emacs-lisp :results silent
+(use-package doom-modeline
+  :init (doom-modeline-mode 1))
+#+END_SRC
+** org-superstar
+#+BEGIN_SRC emacs-lisp :results silent
+  (use-package org-superstar
+  :config 
+  (add-hook 'org-mode-hook (lambda ()  (org-superstar-mode 1))))
+#+END_SRC
+
+* [#A] Writing Workflow
+There are several things that I need in my writing workflow.
+** DONE A reliable bibliographies management system. > org-ref 
+** DONE A reliable note taking system that binds the notes files to the pdfs automatically. > org-roam
+** DONE Reliable org-latex-export and \LaTeX settings
+** DONE translation and synonyms finding at point
+** DONE spell-checking 
+** TODO grammar correction
+** DONE [#A] Handling bibliographies
+*** ivy-bibtex
+#+BEGIN_SRC emacs-lisp :results silent
+(use-package ivy-bibtex)
+#+END_SRC
+*** Org-ref
+ Package-Requires: ((org "9.4") (dash "0") (s "0") (f "0") (htmlize "0") (hydra "0") (avy "0") (parsebib "0") (bibtex-completion "0") (citeproc "0"))
+installed them through melpa
+
+    1. [X] bibtex-completion
+    2. [X] citeproc
+    3. dash already installed
+    4. parsebib already installed as a dep
+    5. [X] htmilze
+    6. [X] avy
+    7. [X] hydra
+    8. [ ] org-ref-ivy
+    9. [X] ivy-bibtex
+#+begin_src emacs-lisp :results silent       
+  (setq bibtex-completion-bibliography '("/home/alkhaldieid/work/res/cited_lib.bib")
+	  bibtex-completion-library-path '("~/work/res/pdfs")
+	  bibtex-completion-notes-path "~/repos/org/roam/"
+	  bibtex-completion-notes-template-multiple-files "* ${author-or-editor}, ${title}, ${journal}, (${year}) :${=type=}: \n\nSee [[cite:&${=key=}]]\n"
+
+	  bibtex-completion-notes-template-multiple-files
+	  (concat
+	  "#+TITLE: ${title}\n"
+	  "#+ROAM_KEY: cite:${=key=}\n"
+	  ":PROPERTIES:\n"
+	  ":Custom_ID: ${=key=}\n"
+	  ":AUTHOR: ${author-abbrev}\n"
+	  ":JOURNAL: ${journaltitle}\n"
+	  ":DATE: ${date}\n"
+	  ":YEAR: ${year}\n"
+	  ":DOI: ${doi}\n"
+	  ":URL: ${url}\n"
+	  ":END:\n\n"
+	  "* Why am I reading this article?\n"
+	  "* Problem Definition\n"
+	  "* Proposed Method\n"
+	  "* Dataset used\n"
+	  "* Key Notes\n")
+	  bibtex-completion-additional-search-fields '(keywords)
+	  bibtex-completion-display-formats
+	  '((article       . "${=has-pdf=:1}${=has-note=:1} ${year:4} ${author:36} ${title:*} ${journal:40}")
+	    (inbook        . "${=has-pdf=:1}${=has-note=:1} ${year:4} ${author:36} ${title:*} Chapter ${chapter:32}")
+	    (incollection  . "${=has-pdf=:1}${=has-note=:1} ${year:4} ${author:36} ${title:*} ${booktitle:40}")
+	    (inproceedings . "${=has-pdf=:1}${=has-note=:1} ${year:4} ${author:36} ${title:*} ${booktitle:40}")
+	    (t             . "${=has-pdf=:1}${=has-note=:1} ${year:4} ${author:36} ${title:*}"))
+	  bibtex-completion-pdf-open-function
+	  (lambda (fpath)
+	    (call-process "open" nil 0 nil fpath)))
+  (use-package org-ref)
+  (require 'org-ref-ivy)
+
+  (setq org-ref-insert-link-function 'org-ref-insert-link-hydra/body
+	org-ref-insert-cite-function 'org-ref-cite-insert-ivy
+	org-ref-insert-label-function 'org-ref-insert-label-link
+	org-ref-insert-ref-function 'org-ref-insert-ref-link
+	org-ref-cite-onclick-function (lambda (_) (org-ref-citation-hydra/body)))
+
+#+end_src
+** DONE [#A] Taking Notes
+*** Org-Roam-Mode
+#+begin_src emacs-lisp :results silent
+(use-package org-roam
+  :custom
+  (org-roam-directory (file-truename "~/repos/org/roam"))
+  :bind (("C-c n l" . org-roam-buffer-toggle)
+         ("C-c n f" . org-roam-node-find)
+         ("C-c n g" . org-roam-graph)
+         ("C-c n i" . org-roam-node-insert)
+         ("C-c n c" . org-roam-capture)
+         ;; Dailies
+         ("C-c n j" . org-roam-dailies-capture-today))
+  :config
+  ;; If you're using a vertical completion framework, you might want a more informative completion interface
+  (setq org-roam-node-display-template (concat "${title:*} " (propertize "${tags:10}" 'face 'org-tag)))
+  (org-roam-db-autosync-mode)
+  ;; If using org-roam-protocol
+  (require 'org-roam-protocol))
+#+end_src
+*** org-roam-bibtex
+#+BEGIN_SRC emacs-lisp :results silent
+  (use-package org-roam-bibtex)
+#+END_SRC
+** DONE search notes
+#+BEGIN_SRC emacs-lisp :results silent
+  (use-package deft)
+
+  (setq deft-directory "~/repos/org/roam/")
+#+END_SRC
+** [#A] Translation and Synonyms at point
+translation, synonyms and other useful tools needed for writing efficiency. 
+
+#+BEGIN_SRC emacs-lisp :results silent
+  (use-package mw-thesaurus)
+  (use-package flyspell-correct-ivy)
+
+  (define-key evil-normal-state-map (kbd "T") 'mw-thesaurus-lookup-at-point)
+  ;; (define-key evil-normal-state-map (kbd "t") 'ispell-word)
+  (define-key evil-normal-state-map (kbd "t") 'flyspell-correct-at-point)
+
+#+END_SRC 
+
+** flyspell configs
+Things I want flyspell to do automatically:
+1. enable flyspell mode in every text mode buffer
+2. bind a key to go to the next or the previous flyspell error or learn the correct one if they make sense.
+#+BEGIN_SRC emacs-lisp :results silent
+  (add-hook 'org-mode-hook 'flyspell-mode)
+#+END_SRC
+* [#C] Writing Workflow extras
+** Academic phrases 
+#+BEGIN_SRC emacs-lisp :results silent
+  (use-package academic-phrases)
+#+END_SRC
+* Convenience Settings
+
+** smartparen-mode
+#+BEGIN_SRC emacs-lisp :results silent
+
+  (use-package smartparens
+    :config
+    (smartparens-global-mode 1))
+#+END_SRC
+
+** Olivetti mode
+#+BEGIN_SRC emacs-lisp :results silent
+  (use-package olivetti)
+#+END_SRC
+* Python Setup
+** pyvenv
+#+BEGIN_SRC emacs-lisp :results silent
+  (setenv "WORKON_HOME" "/home/alkhaldieid/anaconda3/envs/")
+  (use-package pyvenv
+    :ensure t
+    :config
+    (pyvenv-mode t)
+
+    ;; Set correct Python interpreter
+    (setq pyvenv-post-activate-hooks
+          (list (lambda ()
+                  (setq python-shell-interpreter (concat pyvenv-virtual-env "bin/python")))))
+    (setq pyvenv-post-deactivate-hooks
+          (list (lambda ()
+                  (setq python-shell-interpreter "python")))))
+  (setq python-python-command "~/anaconda3/envs/emax/bin/python")
+#+END_SRC
+** Clear the python inferior output buffer
+#+BEGIN_SRC emacs-lisp :results silent
+  (defun my-clear ()
+    (interactive)
+    (let ((comint-buffer-maximum-size 0))
+      (comint-truncate-buffer)))
+#+END_SRC
+** lsp-mode
+#+BEGIN_SRC emacs-lisp :results silent
+(use-package lsp-mode
+  :commands lsp)
+#+END_SRC
+* Org-babel
+#+BEGIN_SRC emacs-lisp :results silent
+ ; (use-package ob-ipython)
+  (org-babel-do-load-languages
+   'org-babel-load-languages
+   '((python . t)
+     ;;(ipython . t)
+     (lisp . t)))
+#+END_SRC
+* File Management Settings
+#+BEGIN_SRC emacs-lisp :results silent
+  (recentf-mode)
+#+END_SRC
+
+* Openwith
+#+BEGIN_SRC emacs-lisp :results silent
+  (use-package openwith
+    :init
+
+    (setq openwith-associations '(("\\.pdf\\'" "evince" (file))
+  				("\\.mp4\\'" "mpv" (file))
+  				("\\.amr\\'" "mpv" (file))
+  				("\\.mkv\\'" "mpv" (file))
+  				("\\.webm\\'" "mpv" (file))
+  				("\\.html\\'" "brave" (file))
+  				("\\.png\\'" "sxiv" (file))
+  				("\\.svg\\'" "sxiv" (file))
+  				))
+    :config
+    (openwith-mode t))
+#+END_SRC

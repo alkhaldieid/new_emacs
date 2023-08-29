@@ -1,0 +1,1 @@
+/home/alkhaldieid/.emacs.d/straight/repos/replace-colorthemes/blue-erc-theme.el

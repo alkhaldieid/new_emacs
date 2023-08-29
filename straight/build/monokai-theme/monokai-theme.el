@@ -1,0 +1,1 @@
+/home/alkhaldieid/.emacs.d/straight/repos/monokai-emacs/monokai-theme.el

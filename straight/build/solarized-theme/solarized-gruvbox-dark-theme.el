@@ -1,0 +1,1 @@
+/home/alkhaldieid/.emacs.d/straight/repos/solarized-emacs/solarized-gruvbox-dark-theme.el

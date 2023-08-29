@@ -1,0 +1,1 @@
+/home/alkhaldieid/.emacs.d/straight/repos/emacs-faff-theme/faff-theme.el

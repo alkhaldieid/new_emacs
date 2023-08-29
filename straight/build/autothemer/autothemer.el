@@ -1,0 +1,1 @@
+/home/alkhaldieid/.emacs.d/straight/repos/autothemer/autothemer.el

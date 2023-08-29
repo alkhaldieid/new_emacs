@@ -1,0 +1,1 @@
+/home/alkhaldieid/.emacs.d/straight/repos/solarized-emacs/solarized.el

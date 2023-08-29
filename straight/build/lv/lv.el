@@ -1,0 +1,1 @@
+/home/alkhaldieid/.emacs.d/straight/repos/hydra/lv.el
