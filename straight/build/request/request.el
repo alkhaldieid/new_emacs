@@ -1,1 +1,0 @@
-/home/alkhaldieid/.emacs.d/straight/repos/emacs-request/request.el

@@ -1,1 +1,0 @@
-/home/alkhaldieid/.emacs.d/straight/repos/ef-themes/ef-kassio-theme.el

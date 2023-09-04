@@ -1,1 +1,0 @@
-/home/alkhaldieid/.emacs.d/straight/repos/cloud-theme/cloud-theme.el

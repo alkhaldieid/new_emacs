@@ -1,1 +1,0 @@
-/home/alkhaldieid/.emacs.d/straight/repos/academic-phrases/academic-phrases.el
