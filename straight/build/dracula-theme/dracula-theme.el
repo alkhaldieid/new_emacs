@@ -1,0 +1,1 @@
+/home/alkhaldieid/.emacs.d/straight/repos/emacs/dracula-theme.el

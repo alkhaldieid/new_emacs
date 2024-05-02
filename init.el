@@ -37,7 +37,7 @@
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  '(org-agenda-files
-   '("~/repos/org/roam/20230814145851-generative_ai_with_large_language_models.org")))
+   '("/home/alkhaldieid/repos/org/agenda/jobs.org" "/home/alkhaldieid/repos/org/roam/20230814145851-generative_ai_with_large_language_models.org")))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.

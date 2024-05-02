@@ -29,7 +29,7 @@ Can't function without vim motion keys. So, Evil mode and evil stuff have to be 
        :config
        (progn
 	 (require 'evil-org-agenda)
-	 (evil-org-mode)
+	 (evil-org-mode 1)
 	 (evil-org-agenda-set-keys)))
    #+end_src
 
@@ -55,6 +55,11 @@ Can't function without vim motion keys. So, Evil mode and evil stuff have to be 
 
      (setq org-treat-S-cursor-todo-selection-as-state-change nil)
    #+END_SRC
+
+** Org-pomodoro
+#+BEGIN_SRC emacs-lisp :results silent
+  (use-package org-pomodoro)
+#+END_SRC
 ** Undo tree                                                         :global:
 Replicate the undo/redo functionality in vim. 
    #+BEGIN_SRC emacs-lisp :results silent
@@ -184,15 +189,15 @@ Replicate the undo/redo functionality in vim.
     "is" 'academic-phrases-by-section
 
     ;; apps
-    "aa" 'org-agenda
     "ae" 'mu4e
     "aw" 'eww
 
     ;; orgmode
 
-    "oop" 'org-pomodoro
+    ;;"oa" 'org-agenda
+    "op" 'org-pomodoro
     "ooe" 'org-set-effort
-    "t" 'modus-themes-toggle
+    "t" 'org-todo
     ;; help funcs
     "hf" 'describe-function
     "hk" 'describe-key

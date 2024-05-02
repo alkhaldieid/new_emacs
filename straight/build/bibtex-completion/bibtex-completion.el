@@ -1,0 +1,1 @@
+/home/alkhaldieid/.emacs.d/straight/repos/helm-bibtex/bibtex-completion.el

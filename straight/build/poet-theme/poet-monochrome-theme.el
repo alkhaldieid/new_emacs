@@ -1,0 +1,1 @@
+/home/alkhaldieid/.emacs.d/straight/repos/poet/poet-monochrome-theme.el
