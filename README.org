@@ -125,6 +125,7 @@ Replicate the undo/redo functionality in vim.
     "ws" 'evil-window-split
     "wm" 'delete-other-windows
     "w=" 'evil-window-increase-width
+    "w-" 'evil-window-decrease-width
 
     ;; workspaces
     "1" 'eyebrowse-switch-to-window-config-1
@@ -204,6 +205,20 @@ Replicate the undo/redo functionality in vim.
     "hv" 'describe-variable
     "hm" 'describe-mode
     "hb" 'describe-bindings
+    ;; consult commands
+    "ct" 'consult-theme
+    ;; yasnippet
+    "yn"  'yas-new-snippet
+    "yf"  'yas-visit-snippet-file
+    ;; org-agenda keybindings
+    "ac" 'consult-org-agenda
+    "ar" 'org-remove-file
+    "aa" 'org-agenda-file-to-front
+
+    ;; op
+    "uh" 'hs-hide-all
+    "us" 'hs-show-all
+    "ut" 'hs-toggle-hiding
     )
 #+END_SRC
 *** orgmode leader map
