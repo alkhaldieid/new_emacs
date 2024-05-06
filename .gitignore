@@ -7,3 +7,5 @@ personal.el
 recentf
 undo-tree/
 backups/*
+elpa/*
+request/*
