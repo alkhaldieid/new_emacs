@@ -1,1 +1,0 @@
-/home/alkhaldieid/.emacs.d/straight/repos/external-completion/external-completion.el

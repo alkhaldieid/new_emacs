@@ -1,1 +1,0 @@
-/home/alkhaldieid/.emacs.d/straight/repos/replace-colorthemes/simple-1-theme.el

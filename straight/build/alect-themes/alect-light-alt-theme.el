@@ -1,1 +1,0 @@
-/home/alkhaldieid/.emacs.d/straight/repos/alect-themes/alect-light-alt-theme.el

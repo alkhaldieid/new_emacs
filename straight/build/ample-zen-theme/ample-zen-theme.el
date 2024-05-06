@@ -1,1 +1,0 @@
-/home/alkhaldieid/.emacs.d/straight/repos/ample-zen/ample-zen-theme.el

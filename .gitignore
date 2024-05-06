@@ -1,0 +1,9 @@
+straight/*
+auto-save-list/*
+README.el
+auto-save-list/
+org-roam.db
+personal.el
+recentf
+undo-tree/
+backups/*

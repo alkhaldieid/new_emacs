@@ -1,1 +1,0 @@
-/home/alkhaldieid/.emacs.d/straight/repos/replace-colorthemes/robin-hood-theme.el

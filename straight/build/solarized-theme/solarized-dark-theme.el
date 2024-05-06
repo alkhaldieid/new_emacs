@@ -1,1 +1,0 @@
-/home/alkhaldieid/.emacs.d/straight/repos/solarized-emacs/solarized-dark-theme.el

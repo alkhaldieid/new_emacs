@@ -1,1 +1,0 @@
-/home/alkhaldieid/.emacs.d/straight/repos/tao-theme-emacs/tao-theme-emacs-autoloads.el

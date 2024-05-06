@@ -1,1 +1,0 @@
-/home/alkhaldieid/.emacs.d/straight/repos/mixed-pitch/mixed-pitch.el

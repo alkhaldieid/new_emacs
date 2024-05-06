@@ -1,1 +1,0 @@
-/home/alkhaldieid/.emacs.d/straight/repos/replace-colorthemes/oswald-theme.el
