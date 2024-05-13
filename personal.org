@@ -1,0 +1,56 @@
+
+#+BEGIN_SRC emacs-lisp :results silent
+
+
+(setenv "HOME" "/home/alkhaldieid/")
+
+(evil-leader/set-key
+  ;; work files
+  "ow1" '(lambda() (interactive) (find-file "~/Dropbox/finalV/first/ijcst.tex"))
+  "ow2" '(lambda() (interactive) (find-file "~/Dropbox/second_final/paper.org"))
+  "ow3o" '(lambda() (interactive) (find-file "~/Dropbox/third/paper.org"))
+  "ow3r" '(lambda() (interactive) (find-file "~/repos/writings/paper3/resubmit/resubmission/resubmission_body.org"))
+  "ow4" '(lambda() (interactive) (find-file "~/Dropbox/four/paper.org"))
+  ;; "owpp" '(lambda() (interactive) (find-file "~/Dropbox/proposal/myproposal/Proposal and Thesis/lab/uthesis12/paper1.org"))
+  "owpp" '(lambda() (interactive) (find-file "~/repos/writings/proposal/paper/second_draft/paper.org"))
+  "owps" '(lambda() (interactive) (find-file "~/Dropbox/proposal/presentation/lab/beamer.org"))
+  "owc" '(lambda() (interactive) (find-file "~/repos/cv/cv.tex"))
+  "owa" '(lambda() (interactive) (find-file
+                           "/home/alkhaldieid/Dropbox/LaTex/abstract.tex"))
+  ;; "owd" '(lambda() (interactive) (find-file
+  ;;                          "/home/alkhaldieid/Dropbox/dissertation/dissertation.org"))
+  ;; "
+  "owd" '(lambda() (interactive) (find-file
+                           "/home/alkhaldieid/repos/writings/dissertation/body.org"))
+
+  "owlp" '(lambda() (interactive) (find-file "~/Dropbox/LaTex/proposalheader.tex"))
+  "owla" '(lambda() (interactive) (find-file "~/Dropbox/LaTex/abstract.tex"))
+  "owb1" '(lambda() (interactive) (find-file "~/work/mend/library.bib"))
+  "owb2" '(lambda() (interactive) (find-file "~/work/res/cited_lib.bib"))
+
+  "ocv" '(lambda() (interactive) (find-file "~/repos/cv/org/cv.org"))
+  "ooo" '(lambda() (interactive) (find-file "~/Dropbox/org/notes/org-mode.org"))
+  "ool" '(lambda() (interactive) (find-file "~/repos/shared/layers.org"))
+  "oat" '(lambda() (interactive) (find-file "~/repos/org/agenda/TODOs.org"))
+  "oam" '(lambda() (interactive) (find-file "~/repos/org/agenda/monthly.org"))
+  "oay" '(lambda() (interactive) (find-file "~/repos/org/agenda/yearly.org"))
+  "oar" '(lambda() (interactive) (find-file "~/repos/org/agenda/research.org"))
+  "oas" '(lambda() (interactive) (find-file "~/repos/org/agenda/salah.org"))
+  "oaj" '(lambda() (interactive) (find-file "~/repos/org/agenda/jobs.org"))
+
+  ;; cf files
+  "cfe" '(lambda() (interactive) (find-file "~/.emacs.d/README.org"))
+  "cfo" '(lambda() (interactive) (find-file "~/.ihsec/myb/README.org"))
+  "cfi" '(lambda() (interactive) (find-file "~/.config/i3/config"))
+  "cfa" '(lambda() (interactive) (find-file "~/.config/aliasrc"))
+  "cfz" '(lambda() (interactive) (find-file "~/.config/zsh/.zshrc"))
+  "cfp" '(lambda() (interactive) (find-file "~/.profile"))
+  "cfd" '(lambda() (interactive) (find-file "~/.config/directories"))
+  "cfm" '(lambda() (interactive) (find-file "~/.emacs.d/myinit.org"))
+  "cfd" '(lambda() (interactive) (find-file "~/.local/src/dwm/config.h"))
+  "cfk" '(lambda() (interactive) (find-file "~/.local/src/dwm/config.h"))
+  "cfk" '(lambda() (interactive) (find-file "~/.config/kitty/kitty.conf"))
+  "cfr" '(lambda() (interactive) (find-file "~/.config/ranger/rc.conf"))
+  )
+
+#+END_SRC

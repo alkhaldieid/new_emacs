@@ -620,3 +620,19 @@ Things I want flyspell to do automatically:
     :config
     (openwith-mode t))
 #+END_SRC
+
+* Version Control
+#+BEGIN_SRC emacs-lisp :results silent
+  (use-package magit
+    )
+#+END_SRC
+
+* Buffer Display
+#+BEGIN_SRC emacs-lisp :results silent
+(defun my-resize-margins ()
+  (let ((margin-size (/ (- (frame-width) 80) 4)))
+    (set-window-margins nil margin-size margin-size)))
+
+(add-hook 'window-configuration-change-hook #'my-resize-margins)
+(my-resize-margins)
+#+END_SRC
