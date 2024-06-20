@@ -1,4 +1,3 @@
-#+STARTUP: overview
 #+TITLE: PhD Emacs
 
 * Evil
@@ -213,7 +212,8 @@ Replicate the undo/redo functionality in vim.
     ;; org-agenda keybindings
     "ac" 'consult-org-agenda
     "ar" 'org-remove-file
-    "aa" 'org-agenda-file-to-front
+    "af" 'org-agenda-file-to-front
+    "aa" 'org-agenda
 
     ;; op
     "uh" 'hs-hide-all
@@ -269,6 +269,14 @@ Replicate the undo/redo functionality in vim.
     (global-visual-fill-column-mode 1))
   (add-hook 'org-mode-hook 'visual-fill-column-mode)
   ;(setq 'fill-column 120)
+
+  ;; Function to set up visual-fill-column with margins
+  (defun setup-visual-fill-column ()
+    (interactive)
+    "Setup visual fill column with margins."
+    (setq visual-fill-column-width 80) ; Set text width
+    (setq visual-fill-column-center-text t)
+    (visual-fill-column-mode 1))
 #+END_SRC
 
 * company mode
@@ -372,6 +380,7 @@ Replicate the undo/redo functionality in vim.
   (set-scroll-bar-mode nil)
   (menu-bar-mode 0)
   (tool-bar-mode 0)
+  (global-display-line-numbers-mode 1)
 #+END_SRC
 
 ** Themes
@@ -398,7 +407,7 @@ Replicate the undo/redo functionality in vim.
   (use-package leuven-theme)               
   (use-package solarized-theme)            
 
-  (load-theme 'leuven-dark t)
+  (load-theme 'gnome2 t)
   ;;(global-hl-line-mode t) ;; This highlights the current line in the buffer
 
   (use-package beacon ;; This applies a beacon effect to the highlighted line
@@ -562,20 +571,36 @@ Things I want flyspell to do automatically:
 * Python Setup
 ** pyvenv
 #+BEGIN_SRC emacs-lisp :results silent
-  (setenv "WORKON_HOME" "/home/alkhaldieid/anaconda3/envs/")
+  (use-package python-mode
+    :ensure t)
+
   (use-package pyvenv
     :ensure t
     :config
     (pyvenv-mode t)
 
     ;; Set correct Python interpreter
+    (setenv "WORKON_HOME" "/home/alkhaldieid/anaconda3/envs/")
+    (pyvenv-activate "~/anaconda3/envs/miscs")
     (setq pyvenv-post-activate-hooks
           (list (lambda ()
                   (setq python-shell-interpreter (concat pyvenv-virtual-env "bin/python")))))
     (setq pyvenv-post-deactivate-hooks
           (list (lambda ()
                   (setq python-shell-interpreter "python")))))
-  (setq python-python-command "~/anaconda3/envs/emax/bin/python")
+  (setq python-python-command "~/anaconda3/envs/miscs/bin/python")
+#+END_SRC
+** flycheck
+#+BEGIN_SRC emacs-lisp :results silent
+(use-package flycheck
+  :ensure t
+  :init (global-flycheck-mode))
+
+(use-package flycheck-mypy
+  :ensure t
+  :after flycheck
+  :config
+  (flycheck-add-next-checker 'python-flake8 'python-mypy))
 #+END_SRC
 ** Clear the python inferior output buffer
 #+BEGIN_SRC emacs-lisp :results silent
@@ -586,9 +611,97 @@ Things I want flyspell to do automatically:
 #+END_SRC
 ** lsp-mode
 #+BEGIN_SRC emacs-lisp :results silent
-(use-package lsp-mode
-  :commands lsp)
+  (use-package lsp-mode
+    :ensure t
+    :init
+    (setq lsp-keymap-prefix "C-c l")  ;; Keymap prefix for lsp-mode commands
+    :hook ((python-mode . lsp))  ;; Enable lsp-mode for Python
+    :commands lsp)
+
+  (use-package lsp-ui
+    :ensure t
+    :commands lsp-ui-mode)
+
+  (use-package company
+    :ensure t
+    :config
+    (setq company-idle-delay 0.3)
+    (setq company-minimum-prefix-length 1)
+    :hook (after-init . global-company-mode))
+
+  (use-package lsp-pyright
+    :ensure t
+    :init (setq lsp-pyright-multi-root nil)
+    :hook (python-mode . (lambda ()
+                           (require 'lsp-pyright)
+                           (lsp))))
+
+  ;; Manual organize imports function
+  (defun lsp-pyright-organize-imports ()
+    "Organize imports using Pyright."
+    (interactive)
+    (lsp-execute-code-action-by-kind "source.organizeImports"))
+
+  ;; Bind the organize imports function to a key combination, e.g., C-c o
+  (define-key python-mode-map (kbd "C-c o") 'lsp-pyright-organize-imports)
+
+  ;; Bind LSP navigation commands in Evil mode
+  (evil-define-key 'normal python-mode-map (kbd "gd") 'lsp-find-definition)
+  (evil-define-key 'normal python-mode-map (kbd "gD") 'lsp-find-declaration)
+  (evil-define-key 'normal python-mode-map (kbd "gr") 'lsp-find-references)
+  (evil-define-key 'normal python-mode-map (kbd "gi") 'lsp-find-implementation)
+  (evil-define-key 'normal python-mode-map (kbd "K") 'lsp-describe-thing-at-point)
 #+END_SRC
+** Blacken
+#+BEGIN_SRC emacs-lisp :results silent
+(use-package blacken
+  :ensure t
+  :hook (python-mode . blacken-mode))
+#+END_SRC
+** elpy
+#+BEGIN_SRC emacs-lisp :results silent
+;; (use-package elpy
+;;   :ensure t
+;;   :init
+;;   (elpy-enable)
+;;   :config
+;;   (setq elpy-rpc-python-command "python3")
+;;   (setq python-shell-interpreter "python3"))
+
+;; (setq elpy-modules (delq 'elpy-module-flymake elpy-modules))
+#+END_SRC
+** Debugging
+#+BEGIN_SRC emacs-lisp :results silent
+  (use-package dap-mode
+    :ensure t
+    :config
+    ;; Ensure the correct Python executable is used
+    (setq dap-python-executable "python")
+    (require 'dap-python)
+    (dap-auto-configure-mode)
+    (dap-ui-mode 1))
+
+  ;; Set up a Python debug template
+  (dap-register-debug-template "Python :: Run Configuration"
+                               (list :type "python"
+                                     :args ""
+                                     :cwd nil
+                                     :env nil
+                                     :target-module (buffer-file-name)
+                                     :request "launch"
+                                     :name "Python :: Run Configuration"))
+#+END_SRC
+** Display current python executable
+#+BEGIN_SRC emacs-lisp :results silent
+(defun my/display-python-executable ()
+  "Display the current Python executable used by Emacs."
+  (interactive)
+  (message "Current Python executable: %s" (executable-find "python")))
+
+;; Bind the function to a key for easy access
+(global-set-key (kbd "C-c p e") 'my/display-python-executable)
+#+END_SRC
+
 * Org-babel
 #+BEGIN_SRC emacs-lisp :results silent
  ; (use-package ob-ipython)
@@ -627,12 +740,3 @@ Things I want flyspell to do automatically:
     )
 #+END_SRC
 
-* Buffer Display
-#+BEGIN_SRC emacs-lisp :results silent
-(defun my-resize-margins ()
-  (let ((margin-size (/ (- (frame-width) 80) 4)))
-    (set-window-margins nil margin-size margin-size)))
-
-(add-hook 'window-configuration-change-hook #'my-resize-margins)
-(my-resize-margins)
-#+END_SRC
