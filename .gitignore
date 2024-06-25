@@ -11,3 +11,8 @@ elpa/*
 request/*
 transient/*
 elpy/*
+bookmarks
+company-statistics-cache.el
+eln-cache/*
+.org-id-locations*
+/.lsp-session-v1

@@ -59,13 +59,20 @@ Can't function without vim motion keys. So, Evil mode and evil stuff have to be 
 #+BEGIN_SRC emacs-lisp :results silent
   (use-package org-pomodoro)
 #+END_SRC
-** Undo tree                                                         :global:
+** Undo tree
 Replicate the undo/redo functionality in vim. 
-   #+BEGIN_SRC emacs-lisp :results silent
-     (use-package undo-tree
-       :config
-       (global-undo-tree-mode 1))
-   #+END_SRC
+#+BEGIN_SRC emacs-lisp :results silent
+  (use-package undo-tree
+    :config
+    (global-undo-tree-mode 1)
+    (setq evil-undo-system 'undo-tree)
+    (define-key evil-normal-state-map (kbd "u") 'undo-tree-undo)
+    (define-key evil-normal-state-map (kbd "C-r") 'undo-tree-redo))
+
+#+END_SRC
+#+BEGIN_SRC emacs-lisp :results silent
+
+#+END_SRC
 ** WM in emacs
  #+BEGIN_SRC emacs-lisp :results silent
  (use-package eyebrowse
@@ -319,6 +326,34 @@ Replicate the undo/redo functionality in vim.
 #+BEGIN_SRC emacs-lisp :results silent
   (global-visual-line-mode)
 #+END_SRC
+** Customizing Buffer Display Behavior in Emacs
+
+To make any buffer that opens in Emacs appear to the right of the current buffer instead of popping up below, you can customize the window management behavior. 
+
+#+begin_src emacs-lisp
+(setq display-buffer-alist
+      '((".*" ;; match any buffer name
+         (display-buffer-reuse-window
+          display-buffer-in-side-window)
+         (side . right) ;; display the buffer to the right
+         (slot . 0)
+         (window-width . 0.5))))
+#+end_src
+
+This configuration tells Emacs to:
+
+1. Match any buffer name (`".*"`) using a regular expression.
+2. Attempt to reuse an existing window for the buffer (`display-buffer-reuse-window`).
+3. If there is no suitable window to reuse, display the buffer in a side window (`display-buffer-in-side-window`).
+4. Position the side window on the right (`(side . right)`).
+5. Specify that this should be the first slot (`(slot . 0)`) on the right side.
+6. Set the width of the side window to 50% of the frame (`(window-width . 0.5)`).
+
+With this configuration, any new buffer that opens will appear to the right of the current buffer. You can adjust the `window-width` value to change the width of the new window if needed.
+* File Management Settings
+#+BEGIN_SRC emacs-lisp :results silent
+  (recentf-mode)
+#+END_SRC
 * Vertico + consult + orderless + Marginalia + Embark
 ** Vertico installation
 #+BEGIN_SRC emacs-lisp :results silent
@@ -407,7 +442,7 @@ Replicate the undo/redo functionality in vim.
   (use-package leuven-theme)               
   (use-package solarized-theme)            
 
-  (load-theme 'gnome2 t)
+  (load-theme 'cobalt t)
   ;;(global-hl-line-mode t) ;; This highlights the current line in the buffer
 
   (use-package beacon ;; This applies a beacon effect to the highlighted line
@@ -702,20 +737,24 @@ Things I want flyspell to do automatically:
 (global-set-key (kbd "C-c p e") 'my/display-python-executable)
 #+END_SRC
 
-* Org-babel
+* R
 #+BEGIN_SRC emacs-lisp :results silent
- ; (use-package ob-ipython)
-  (org-babel-do-load-languages
-   'org-babel-load-languages
-   '((python . t)
-     ;;(ipython . t)
-     (lisp . t)))
-#+END_SRC
-* File Management Settings
-#+BEGIN_SRC emacs-lisp :results silent
-  (recentf-mode)
+  (use-package ess)
 #+END_SRC
 
+* Org-babel
+#+BEGIN_SRC emacs-lisp :results silent
+  (org-babel-do-load-languages
+    'org-babel-load-languages
+    '((python . t)
+      (R . t)
+      (lisp . t)))
+  ;; Prevent Emacs from asking for confirmation before running code blocks
+  (setq org-confirm-babel-evaluate nil)
+
+  ;; Ensure that results are output in a format that can be exported
+  (setq org-babel-default-header-args:R '((:results . "output replace") (:exports . "both")))
+#+END_SRC
 * Openwith
 #+BEGIN_SRC emacs-lisp :results silent
   (use-package openwith
@@ -736,7 +775,6 @@ Things I want flyspell to do automatically:
 
 * Version Control
 #+BEGIN_SRC emacs-lisp :results silent
-  (use-package magit
-    )
+  (use-package magit)
 #+END_SRC
 

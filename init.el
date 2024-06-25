@@ -20,8 +20,8 @@
 (use-package straight
   :custom
   (straight-use-package-by-default t))
-(add-to-list 'package-archives
-             '("melpa" . "https://melpa.org/packages/") t)
+;;(add-to-list 'package-archives
+;;             '("melpa" . "https://melpa.org/packages/") t)
 (use-package org)
 ;; since I can't do shit without VIM motions, I might need it downloaded here first
 (use-package evil
