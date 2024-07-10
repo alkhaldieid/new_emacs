@@ -239,6 +239,10 @@ Can't function without vim motion keys. So, Evil mode and evil stuff have to be 
   ;; Ensure that results are output in a format that can be exported
   (setq org-babel-default-header-args:R '((:results . "output replace") (:exports . "both")))
 #+END_SRC
+** misc
+#+BEGIN_SRC emacs-lisp :results silent
+(setq org-edit-src-content-indentation 0)
+#+END_SRC
 * Undo tree
 Replicate the undo/redo functionality in vim. 
 #+BEGIN_SRC emacs-lisp :results silent
@@ -458,10 +462,16 @@ With this configuration, any new buffer that opens will appear to the right of t
 * Appearance
 ** Options
 #+BEGIN_SRC emacs-lisp :results silent
-  (set-scroll-bar-mode nil)
-  (menu-bar-mode 0)
-  (tool-bar-mode 0)
-  (global-display-line-numbers-mode 1)
+(set-scroll-bar-mode nil)
+(menu-bar-mode 0)
+(tool-bar-mode 0)
+(global-display-line-numbers-mode 1)
+;; Enable relative line numbers
+(setq display-line-numbers-type 'relative)
+
+;; Apply the setting to all buffers
+(add-hook 'prog-mode-hook 'display-line-numbers-mode)
+(add-hook 'text-mode-hook 'display-line-numbers-mode)
 #+END_SRC
 
 ** Themes
