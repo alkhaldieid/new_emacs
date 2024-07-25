@@ -829,3 +829,5 @@ This package shows Git diff information in the gutter (fringe) of Emacs. It can 
   ;; Refresh git-gutter manually if needed
   (global-set-key (kbd "C-x v g") 'git-gutter:update-all-windows)
 #+end_src
+
+* TODO File Management
