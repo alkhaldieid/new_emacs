@@ -16,3 +16,4 @@ company-statistics-cache.el
 eln-cache/*
 .org-id-locations*
 /.lsp-session-v1
+bak*
