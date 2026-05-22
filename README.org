@@ -1,6 +1,13 @@
 #+TITLE: PhD Emacs
 #+STARTUP: overview
 
+#+begin_quote
+This file is retained as historical/literate reference material from the
+original personal configuration. The supported cross-platform configuration now
+loads from =init.el= and =lisp/eid-*.el=. See =README.md= and =INSTALL.md= for
+the researcher-ready macOS/Linux setup.
+#+end_quote
+
 * Evil
 Can't function without vim motion keys. So, Evil mode and evil stuff have to be setup first!.
 ** Evil Mode

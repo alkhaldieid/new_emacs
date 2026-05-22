@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  emacs:
+    name: Emacs byte-compile and tests (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Emacs on Ubuntu
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y emacs-nox make
+
+      - name: Install Emacs on macOS
+        if: runner.os == 'macOS'
+        run: brew install emacs
+
+      - name: Show Emacs version
+        run: emacs --version
+
+      - name: Byte-compile and test
+        run: make ci

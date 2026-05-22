@@ -4,6 +4,12 @@ README.el
 auto-save-list/
 org-roam.db
 personal.el
+local.el
+local.el.gpg
+eid-local.el
+.eid-local.el
+secrets.el
+secrets.el.gpg
 recentf
 undo-tree/
 backups/*
@@ -17,3 +23,5 @@ eln-cache/*
 .org-id-locations*
 /.lsp-session-v1
 bak*
+*.elc
+elfeed/
