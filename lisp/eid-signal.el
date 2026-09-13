@@ -15,6 +15,7 @@
 (require 'eid-ai nil t)
 
 (declare-function magit-status "magit-status" (&optional directory))
+(defvar global-mode-string)
 
 (defgroup eid-signal nil
   "Signal-pipeline and website publishing settings."
@@ -37,6 +38,26 @@
   :type 'regexp
   :group 'eid-signal)
 
+(defcustom eid-signal-log-buffer-name "*signal-pipeline*"
+  "Buffer name for signal-pipeline process logs."
+  :type 'string
+  :group 'eid-signal)
+
+(defcustom eid-signal-progress-buffer-name "*signal-pipeline-progress*"
+  "Buffer name for signal-pipeline progress dashboard."
+  :type 'string
+  :group 'eid-signal)
+
+(defcustom eid-signal-progress-refresh-seconds 1
+  "Seconds between progress dashboard refreshes while the pipeline runs."
+  :type 'number
+  :group 'eid-signal)
+
+(defcustom eid-signal-progress-log-lines 25
+  "Number of recent log lines shown in the progress dashboard."
+  :type 'integer
+  :group 'eid-signal)
+
 (defcustom eid-website-content-directory "content/posts"
   "Relative directory in `eid-personal-website-directory' for article drafts."
   :type 'string
@@ -47,14 +68,24 @@
   :type '(repeat string)
   :group 'eid-signal)
 
-(defcustom eid-website-preview-command '("make" "preview")
-  "Website command used to start a local preview server."
+(defcustom eid-website-preview-command '("python3" "-m" "http.server" "8000")
+  "Command (run in the website repo) to serve the built static site locally."
   :type '(repeat string)
   :group 'eid-signal)
 
-(defcustom eid-website-preview-url "http://localhost:1313"
+(defcustom eid-website-preview-url "http://localhost:8000"
   "Local website preview URL."
   :type 'string
+  :group 'eid-signal)
+
+(defcustom eid-website-review-command '("npm" "run" "review:posts")
+  "Command run in the website repo to refresh the signal-post review list."
+  :type '(repeat string)
+  :group 'eid-signal)
+
+(defcustom eid-website-publish-command '("npm" "run" "publish:posts")
+  "Command run in the website repo to publish curated posts (the site gates it)."
+  :type '(repeat string)
   :group 'eid-signal)
 
 (defvar eid-signal--latest-post nil
@@ -63,11 +94,153 @@
 (defvar eid-signal--last-published-target nil
   "Last website target created by `eid/signal-publish-to-website'.")
 
+(defvar eid-signal--process nil
+  "Currently running signal-pipeline process.")
+
+(defvar eid-signal--status 'idle
+  "Current signal-pipeline status.")
+
+(defvar eid-signal--started-at nil
+  "Time when the current signal-pipeline run started.")
+
+(defvar eid-signal--finished-at nil
+  "Time when the current signal-pipeline run finished.")
+
+(defvar eid-signal--exit-status nil
+  "Exit status from the latest signal-pipeline run.")
+
+(defvar eid-signal--progress-timer nil
+  "Timer used to refresh the signal-pipeline progress dashboard.")
+
+(defvar eid-signal--mode-line-installed nil
+  "Non-nil when signal-pipeline status is installed in `global-mode-string'.")
+
 (defun eid-signal--valid-directory (directory)
   "Return DIRECTORY when it exists, otherwise signal a user error."
   (unless (file-directory-p directory)
     (user-error "Directory does not exist: %s" directory))
   directory)
+
+(defun eid-signal--format-duration (seconds)
+  "Format SECONDS as a compact duration."
+  (let* ((seconds (max 0 (floor seconds)))
+         (minutes (/ seconds 60))
+         (remaining (% seconds 60))
+         (hours (/ minutes 60))
+         (minutes (% minutes 60)))
+    (if (> hours 0)
+        (format "%dh %02dm %02ds" hours minutes remaining)
+      (format "%dm %02ds" minutes remaining))))
+
+(defun eid-signal--elapsed ()
+  "Return elapsed seconds for the current or latest signal run."
+  (when eid-signal--started-at
+    (float-time
+     (time-subtract (or eid-signal--finished-at (current-time))
+                    eid-signal--started-at))))
+
+(defun eid-signal--status-label ()
+  "Return a readable signal-pipeline status label."
+  (pcase eid-signal--status
+    ('running "running")
+    ('succeeded "succeeded")
+    ('failed "failed")
+    ('stopped "stopped")
+    (_ "idle")))
+
+(defun eid-signal--mode-line ()
+  "Return mode-line text for signal-pipeline status."
+  (pcase eid-signal--status
+    ('running
+     (format " Signal:%s" (or (and (eid-signal--elapsed)
+                                   (eid-signal--format-duration (eid-signal--elapsed)))
+                              "running")))
+    ('succeeded " Signal:done")
+    ('failed " Signal:failed")
+    ('stopped " Signal:stopped")
+    (_ "")))
+
+(defun eid-signal--ensure-mode-line ()
+  "Install signal-pipeline status in the mode line."
+  (unless eid-signal--mode-line-installed
+    (add-to-list 'global-mode-string '(:eval (eid-signal--mode-line)) t)
+    (setq eid-signal--mode-line-installed t)))
+
+(defun eid-signal--recent-log-lines ()
+  "Return recent signal-pipeline log lines for the progress dashboard."
+  (let ((buffer (get-buffer eid-signal-log-buffer-name)))
+    (if (not buffer)
+        "No log buffer yet."
+      (with-current-buffer buffer
+        (let* ((text (string-trim (buffer-substring-no-properties
+                                   (point-min) (point-max))))
+               (lines (if (string-empty-p text)
+                          nil
+                        (split-string text "\n")))
+               (tail (last lines (min eid-signal-progress-log-lines
+                                      (length lines)))))
+          (if tail
+              (string-join tail "\n")
+            "Log buffer is empty."))))))
+
+(defun eid-signal--latest-post-line ()
+  "Return a readable latest-post line for progress."
+  (condition-case nil
+      (format "%s" (eid-signal-latest-post))
+    (error "No generated post found yet.")))
+
+(defun eid-signal--render-progress ()
+  "Render the signal-pipeline progress dashboard."
+  (let ((buffer (get-buffer-create eid-signal-progress-buffer-name)))
+    (with-current-buffer buffer
+      (let ((inhibit-read-only t))
+        (erase-buffer)
+        (insert "Signal Pipeline Progress\n")
+        (insert "========================\n\n")
+        (insert (format "Status:   %s\n" (eid-signal--status-label)))
+        (insert (format "Command:  %s\n" (string-join eid-signal-command " ")))
+        (insert (format "Repo:     %s\n" eid-signal-pipeline-directory))
+        (insert (format "Started:  %s\n"
+                        (if eid-signal--started-at
+                            (format-time-string "%Y-%m-%d %H:%M:%S"
+                                                eid-signal--started-at)
+                          "not started")))
+        (insert (format "Elapsed:  %s\n"
+                        (if-let ((elapsed (eid-signal--elapsed)))
+                            (eid-signal--format-duration elapsed)
+                          "0m 00s")))
+        (insert (format "Exit:     %s\n"
+                        (or eid-signal--exit-status "n/a")))
+        (insert (format "Latest:   %s\n" (eid-signal--latest-post-line)))
+        (insert (format "Log:      %s\n\n" eid-signal-log-buffer-name))
+        (insert "Recent Log\n")
+        (insert "----------\n")
+        (insert (eid-signal--recent-log-lines))
+        (insert "\n\nCommands: M-x eid/signal-show-log, M-x eid/signal-stop\n")
+        (goto-char (point-min))
+        (special-mode)))
+    buffer))
+
+(defun eid-signal--refresh-progress ()
+  "Refresh progress dashboard and mode-line status."
+  (when (get-buffer eid-signal-progress-buffer-name)
+    (eid-signal--render-progress))
+  (force-mode-line-update t))
+
+(defun eid-signal--start-progress-timer ()
+  "Start the signal progress refresh timer."
+  (when (timerp eid-signal--progress-timer)
+    (cancel-timer eid-signal--progress-timer))
+  (setq eid-signal--progress-timer
+        (run-at-time 0 eid-signal-progress-refresh-seconds
+                     #'eid-signal--refresh-progress)))
+
+(defun eid-signal--stop-progress-timer ()
+  "Stop the signal progress refresh timer."
+  (when (timerp eid-signal--progress-timer)
+    (cancel-timer eid-signal--progress-timer))
+  (setq eid-signal--progress-timer nil)
+  (eid-signal--refresh-progress))
 
 (defun eid-signal--process-buffer (name)
   "Return process buffer NAME in compilation mode."
@@ -89,20 +262,63 @@
      :sentinel
      (lambda (process event)
        (when (memq (process-status process) '(exit signal))
+         (setq eid-signal--finished-at (current-time)
+               eid-signal--exit-status (process-exit-status process)
+               eid-signal--status
+               (cond
+                ((eq (process-status process) 'signal) 'stopped)
+                ((zerop (process-exit-status process)) 'succeeded)
+                (t 'failed))
+               eid-signal--process nil)
          (with-current-buffer (process-buffer process)
            (let ((inhibit-read-only t))
              (goto-char (point-max))
-             (insert (format "\nProcess %s %s" (process-name process) event)))))))))
+             (insert (format "\nProcess %s %s" (process-name process) event)))))
+         (eid-signal--stop-progress-timer)))))
 
 (defun eid/signal-run ()
   "Run signal-pipeline asynchronously from Emacs."
   (interactive)
+  (when (and eid-signal--process
+             (process-live-p eid-signal--process))
+    (user-error "signal-pipeline is already running"))
   (let* ((directory (eid-signal--valid-directory eid-signal-pipeline-directory))
-         (buffer (eid-signal--process-buffer "*signal-pipeline*")))
-    (pop-to-buffer buffer)
-    (eid-signal--start-process
-     "signal-pipeline" buffer directory eid-signal-command)
+         (buffer (eid-signal--process-buffer eid-signal-log-buffer-name)))
+    (setq eid-signal--status 'running
+          eid-signal--started-at (current-time)
+          eid-signal--finished-at nil
+          eid-signal--exit-status nil)
+    (eid-signal--ensure-mode-line)
+    (setq eid-signal--process
+          (eid-signal--start-process
+           "signal-pipeline" buffer directory eid-signal-command))
+    (display-buffer buffer)
+    (pop-to-buffer (eid-signal--render-progress))
+    (eid-signal--start-progress-timer)
     (message "signal-pipeline started in %s" directory)))
+
+(defun eid/signal-progress ()
+  "Show the signal-pipeline progress dashboard."
+  (interactive)
+  (pop-to-buffer (eid-signal--render-progress)))
+
+(defun eid/signal-show-log ()
+  "Show the signal-pipeline log buffer."
+  (interactive)
+  (pop-to-buffer (get-buffer-create eid-signal-log-buffer-name)))
+
+(defun eid/signal-stop ()
+  "Stop the running signal-pipeline process after confirmation."
+  (interactive)
+  (unless (and eid-signal--process
+               (process-live-p eid-signal--process))
+    (user-error "No signal-pipeline process is running"))
+  (when (yes-or-no-p "Stop signal-pipeline? ")
+    (interrupt-process eid-signal--process)
+    (setq eid-signal--status 'stopped
+          eid-signal--finished-at (current-time)
+          eid-signal--exit-status "interrupted")
+    (eid-signal--stop-progress-timer)))
 
 (defun eid-signal--candidate-directories ()
   "Return existing signal output directories."
@@ -303,15 +519,105 @@ This command asks for confirmation before copying and before running the build."
   (kill-new (eid-signal--selected-text-or-file))
   (message "Draft copied to kill ring"))
 
+(defun eid-signal--post-body (text)
+  "Strip the signal-pipeline metadata header from TEXT, returning the article body.
+Header = leading `# ' lines then a dashed separator; the body follows it."
+  (if (string-match "\n-\\{10,\\}\n" text)
+      (string-trim (substring text (match-end 0)))
+    (string-trim text)))
+
+(defun eid-signal--extract-hashtags (body)
+  "Return hashtag words (without the #) found in BODY, de-duplicated in order."
+  (let (tags (start 0))
+    (while (string-match "#\\([[:alnum:]_]+\\)" body start)
+      (push (match-string 1 body) tags)
+      (setq start (match-end 0)))
+    (nreverse (delete-dups tags))))
+
+(defun eid-signal--override-key (source)
+  "Website post-overrides.json key for SOURCE (filename base minus the timestamp)."
+  (replace-regexp-in-string "__[0-9]\\{8\\}-[0-9]\\{6\\}\\'" ""
+                            (file-name-base source)))
+
+(defun eid-signal--website-compile (command-list buffer-name)
+  "Run COMMAND-LIST (program + args) in the website repo via `compile'."
+  (let ((default-directory (file-name-as-directory eid-personal-website-directory))
+        (compilation-buffer-name-function (lambda (&rest _) buffer-name)))
+    (compile (mapconcat #'shell-quote-argument command-list " "))))
+
+(defun eid/website-review-posts ()
+  "Refresh the website's draft-post review list (npm run review:posts).
+Writes data/signal-posts.review.json in the site; changes no public pages."
+  (interactive)
+  (eid-signal--valid-directory eid-personal-website-directory)
+  (eid-signal--website-compile eid-website-review-command "*eid-website-review*"))
+
+(defun eid-signal--post-at-point-or-prompt ()
+  "Return the signal post file for the current org heading's :FILE: property
+\(the LinkedIn posts in digest.org carry it), else prompt from recent posts."
+  (let ((file (and (derived-mode-p 'org-mode)
+                   (require 'org nil t)
+                   (org-entry-get (point) "FILE" t))))
+    (if (and file (file-readable-p file))
+        file
+      (completing-read "Post to prepare for the website: "
+                       (eid-signal--generated-posts) nil t nil nil
+                       (ignore-errors (eid-signal-latest-post))))))
+
+(defun eid/signal-publish-linkedin-to-website (source)
+  "Prepare a signal-pipeline post SOURCE for the personal website.
+
+Called from a LinkedIn post heading in digest.org, SOURCE is taken from the
+heading's :FILE: property; otherwise you are prompted.  The site only publishes
+posts that have a curated, PUBLIC-SAFE entry in data/post-overrides.json.  This
+puts a ready-to-paste override entry (title/slug/tags/body from the post) on the
+kill ring and opens post-overrides.json — yank it in, make it public-safe, then
+publish with \\[eid/website-publish-posts].  Nothing goes live from here."
+  (interactive (list (eid-signal--post-at-point-or-prompt)))
+  (eid-signal--valid-directory eid-personal-website-directory)
+  (require 'json)
+  (let* ((raw (with-temp-buffer (insert-file-contents source) (buffer-string)))
+         (body (eid-signal--post-body raw))
+         (key (eid-signal--override-key source))
+         (title (truncate-string-to-width (car (split-string body "\n" t)) 80))
+         (tags (eid-signal--extract-hashtags body))
+         (entry (format
+                 "  %s: {\n    \"title\": %s,\n    \"slug\": %s,\n    \"excerpt\": \"\",\n    \"tags\": %s,\n    \"body\": %s\n  },"
+                 (json-encode-string key)
+                 (json-encode-string title)
+                 (json-encode-string (eid/slugify title))
+                 (json-encode tags)
+                 (json-encode-string body))))
+    (kill-new entry)
+    (find-file (expand-file-name "data/post-overrides.json"
+                                 eid-personal-website-directory))
+    (message "Override entry on the kill ring — yank it in, make it public-safe, then M-x eid/website-publish-posts")))
+
+(defun eid/website-publish-posts ()
+  "Publish curated website posts (npm run publish:posts) after confirmation,
+then open Magit on the website repo so you can review, commit, and push."
+  (interactive)
+  (eid-signal--valid-directory eid-personal-website-directory)
+  (unless (yes-or-no-p "Publish curated posts into the website now? ")
+    (user-error "Publish cancelled"))
+  (eid-signal--website-compile eid-website-publish-command "*eid-website-publish*")
+  (when (fboundp 'magit-status)
+    (magit-status eid-personal-website-directory)))
+
 (defun eid-signal-dispatch ()
   "Dispatch signal-pipeline and publishing commands."
   (interactive)
   (let* ((choices '(("run pipeline" . eid/signal-run)
+                    ("progress" . eid/signal-progress)
+                    ("show log" . eid/signal-show-log)
+                    ("stop pipeline" . eid/signal-stop)
                     ("open latest post" . eid/signal-open-latest-post)
                     ("draft LinkedIn post" . eid/signal-draft-linkedin-post)
                     ("refine with AI" . eid/signal-refine-with-ai)
                     ("publication review" . eid/signal-review-for-publication)
-                    ("publish to website" . eid/signal-publish-to-website)
+                    ("website: review drafts" . eid/website-review-posts)
+                    ("website: prepare post (curate override)" . eid/signal-publish-linkedin-to-website)
+                    ("website: publish curated" . eid/website-publish-posts)
                     ("preview website" . eid/signal-preview-website)
                     ("commit website" . eid/signal-commit-website)
                     ("copy draft" . eid/signal-copy-draft-to-clipboard)))
@@ -323,11 +629,16 @@ This command asks for confirmation before copying and before running the build."
   (interactive)
   (eid/leader-set-key
    "sr" #'eid/signal-run
+   "ss" #'eid/signal-progress
+   "so" #'eid/signal-show-log
+   "sX" #'eid/signal-stop
    "sl" #'eid/signal-open-latest-post
    "sd" #'eid/signal-draft-linkedin-post
    "sa" #'eid/signal-refine-with-ai
    "sp" #'eid/signal-review-for-publication
-   "sw" #'eid/signal-publish-to-website
+   "sw" #'eid/signal-publish-linkedin-to-website
+   "sR" #'eid/website-review-posts
+   "sP" #'eid/website-publish-posts
    "sv" #'eid/signal-preview-website
    "sc" #'eid/signal-commit-website
    "sy" #'eid/signal-copy-draft-to-clipboard

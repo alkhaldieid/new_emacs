@@ -58,6 +58,8 @@ those paths out of the public repository."
 
 (defun eid-private-configure-snippets ()
   "Add private snippets to `yas-snippet-dirs' when present."
+  (unless (boundp 'yas-snippet-dirs)
+    (setq yas-snippet-dirs nil))
   (dolist (directory (cons eid-private-snippets-directory
                            eid-private-extra-snippet-directories))
     (when (file-directory-p directory)

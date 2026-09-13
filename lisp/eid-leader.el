@@ -14,6 +14,30 @@
 (declare-function which-key-add-key-based-replacements "which-key" (&rest replacements))
 (declare-function magit-status "magit-status" (&optional directory))
 (declare-function org-export-dispatch "ox" (&optional arg))
+(declare-function evil-window-right "evil-commands" (&optional count))
+(declare-function evil-window-left "evil-commands" (&optional count))
+(declare-function evil-window-up "evil-commands" (&optional count))
+(declare-function evil-window-down "evil-commands" (&optional count))
+(declare-function evil-window-move-far-right "evil-commands" ())
+(declare-function evil-window-move-far-left "evil-commands" ())
+(declare-function evil-window-delete "evil-commands" (&optional window))
+(declare-function evil-window-vsplit "evil-commands" (&optional count file))
+(declare-function evil-window-split "evil-commands" (&optional count file))
+(declare-function evil-window-increase-width "evil-commands" (&optional count))
+(declare-function evil-window-decrease-width "evil-commands" (&optional count))
+(declare-function evil-switch-to-windows-last-buffer "evil-commands" ())
+(declare-function consult-buffer "consult" (&optional sources))
+(declare-function ibuffer "ibuffer"
+                  (&optional other-window-p name qualifiers noselect shrink filter-groups formats))
+(declare-function eyebrowse-switch-to-window-config-1 "eyebrowse" ())
+(declare-function eyebrowse-switch-to-window-config-2 "eyebrowse" ())
+(declare-function eyebrowse-switch-to-window-config-3 "eyebrowse" ())
+(declare-function eyebrowse-switch-to-window-config-4 "eyebrowse" ())
+(declare-function eyebrowse-switch-to-window-config-5 "eyebrowse" ())
+(declare-function eyebrowse-switch-to-window-config-6 "eyebrowse" ())
+(declare-function eyebrowse-switch-to-window-config-7 "eyebrowse" ())
+(declare-function eyebrowse-switch-to-window-config-8 "eyebrowse" ())
+(declare-function eyebrowse-switch-to-window-config-9 "eyebrowse" ())
 
 (defgroup eid-leader nil
   "Leader-key architecture for Eid Research Emacs."
@@ -77,24 +101,75 @@ When evil-leader is unavailable, commands are also available under `C-c SPC'."
        (format "SPC %s" (eid-leader--fallback-key (car entry)))
        (cdr entry)))))
 
+(defcustom eid-leader-job-digest-path
+  (expand-file-name "skills/pipeline/output/digest.org"
+                    (or (getenv "OPENCLAW_WORKSPACE")
+                        "~/.openclaw/workspace"))
+  "Canonical path to the daily job digest opened by `SPC f j'."
+  :type 'file
+  :group 'eid-leader)
+
+(defun eid/open-job-digest ()
+  "Open the daily job digest (skills/pipeline/output/digest.org)."
+  (interactive)
+  (let ((path (expand-file-name eid-leader-job-digest-path)))
+    (if (file-exists-p path)
+        (find-file path)
+      (message "Job digest not found at %s — run `node skills/pipeline/scripts/digest.js' first."
+               path))))
+
 (defun eid/leader-register-core ()
   "Register core Vim-style leader bindings."
   (interactive)
   (eid/leader-label "a" "AI")
+  (eid/leader-label "f" "files / jobs")
   (eid/leader-label "r" "RSS / intake")
   (eid/leader-label "s" "signal / publish")
   (eid/leader-label "n" "notes")
-  (eid/leader-label "b" "bibliography")
+  (eid/leader-label "b" "buffer")
+  (eid/leader-label "c" "citations")
   (eid/leader-label "p" "projects")
   (eid/leader-label "g" "git")
   (eid/leader-label "e" "export")
   (eid/leader-label "t" "tests / tools")
+  (eid/leader-label "w" "windows")
   (eid/leader-set-key
    "<SPC>" #'execute-extended-command
    "fs" #'save-buffer
    "ff" #'find-file
-   "bb" #'switch-to-buffer
-   "bd" #'kill-current-buffer
+   "fj" #'eid/open-job-digest
+   ;; Core set mirrors the old README.org leader map.
+   "bb" #'consult-buffer
+   "bd" #'kill-buffer
+   "bp" #'previous-buffer
+   "bn" #'next-buffer
+   "bi" #'ibuffer
+   ;; Extra Vim-ish conveniences (not in the old config, harmless to keep).
+   "bl" #'evil-switch-to-windows-last-buffer
+   "bs" #'scratch-buffer
+   "br" #'revert-buffer
+   "bm" #'view-echo-area-messages
+   "wl" #'evil-window-right
+   "wL" #'evil-window-move-far-right
+   "wh" #'evil-window-left
+   "wH" #'evil-window-move-far-left
+   "wk" #'evil-window-up
+   "wj" #'evil-window-down
+   "wd" #'evil-window-delete
+   "wv" #'evil-window-vsplit
+   "ws" #'evil-window-split
+   "wm" #'delete-other-windows
+   "w=" #'evil-window-increase-width
+   "w-" #'evil-window-decrease-width
+   "1" #'eyebrowse-switch-to-window-config-1
+   "2" #'eyebrowse-switch-to-window-config-2
+   "3" #'eyebrowse-switch-to-window-config-3
+   "4" #'eyebrowse-switch-to-window-config-4
+   "5" #'eyebrowse-switch-to-window-config-5
+   "6" #'eyebrowse-switch-to-window-config-6
+   "7" #'eyebrowse-switch-to-window-config-7
+   "8" #'eyebrowse-switch-to-window-config-8
+   "9" #'eyebrowse-switch-to-window-config-9
    "gg" #'magit-status
    "ee" #'org-export-dispatch
    "qq" #'save-buffers-kill-emacs))

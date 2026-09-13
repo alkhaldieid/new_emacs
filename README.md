@@ -24,6 +24,12 @@ git clone https://github.com/alkhaldieid/new_emacs ~/.emacs.d
 emacs
 ```
 
+To try this profile on macOS without replacing an existing `~/.emacs.d`:
+
+```sh
+./bin/eid-emacs-macos
+```
+
 On first launch, `straight.el` installs packages. Put private machine settings in `~/.emacs.d/local.el`, `~/.emacs.d/local.el.gpg`, repo-local `.eid-local.el`, or the private `private/` submodule.
 
 ## Core Customization
@@ -151,12 +157,14 @@ git@github.com:alkhaldieid/alkhaldieid.github.io.git
 Workflow:
 
 1. Run `M-x eid/signal-run`.
-2. Open the newest generated post with `M-x eid/signal-open-latest-post`.
-3. Draft for LinkedIn with `M-x eid/signal-draft-linkedin-post`.
-4. Refine or review with AI.
-5. Publish to the website with `M-x eid/signal-publish-to-website`.
-6. Preview locally with `M-x eid/signal-preview-website`.
-7. Commit after reviewing the diff with `M-x eid/signal-commit-website`.
+2. Watch `*signal-pipeline-progress*` or reopen it with `M-x eid/signal-progress`.
+3. Open the raw process log with `M-x eid/signal-show-log`.
+4. Open the newest generated post with `M-x eid/signal-open-latest-post`.
+5. Draft for LinkedIn with `M-x eid/signal-draft-linkedin-post`.
+6. Refine or review with AI.
+7. Publish to the website with `M-x eid/signal-publish-to-website`.
+8. Preview locally with `M-x eid/signal-preview-website`.
+9. Commit after reviewing the diff with `M-x eid/signal-commit-website`.
 
 Publishing never pushes automatically. LinkedIn support creates drafts and clipboard exports only.
 
@@ -182,7 +190,18 @@ The leader key is `<SPC>` in Evil normal/visual states. A fallback prefix, `C-c 
 | `<leader> r n` | Save RSS item to notes |
 | `<leader> r g` | Generate signal seed |
 | `<leader> r a` | AI summarize RSS item |
+| `<leader> w h/j/k/l` | Move to left/down/up/right window |
+| `<leader> w H/L` | Move current window far left/right |
+| `<leader> w s` | Split window horizontally |
+| `<leader> w v` | Split window vertically |
+| `<leader> w d` | Delete window |
+| `<leader> w m` | Maximize current window |
+| `<leader> w =/-` | Increase/decrease window width |
+| `<leader> 1..9` | Switch eyebrowse workspace |
 | `<leader> s r` | Run signal-pipeline |
+| `<leader> s s` | Show signal-pipeline progress |
+| `<leader> s o` | Show signal-pipeline log |
+| `<leader> s X` | Stop running signal-pipeline |
 | `<leader> s l` | Open latest post |
 | `<leader> s d` | Draft LinkedIn post |
 | `<leader> s a` | Refine draft with AI |
@@ -202,6 +221,13 @@ Dispatch commands:
 - `M-x eid-ai-dispatch`
 - `M-x eid-rss-dispatch`
 - `M-x eid-signal-dispatch`
+
+LinkedIn generation notes:
+
+- Select only the rough ideas you want to turn into a post, then press `<leader> a l`.
+- The generated post appears in `*eid-ai-LinkedIn Draft*`.
+- The exact prompt sent to the model is saved in `*eid-ai-prompt-LinkedIn Draft*`.
+- The command should start with a complete post, then show hooks, evidence gaps, publication risks, and hashtags.
 
 ## Validation
 

@@ -64,6 +64,8 @@ When nil, existing Org files under `eid-notes-directory' are used lightly."
 
 (defun eid-research-configure-org ()
   "Configure built-in Org for research writing."
+  (unless (boundp 'org-modules)
+    (setq org-modules nil))
   (setq org-directory eid-notes-directory
         org-default-notes-file (expand-file-name "inbox.org" eid-notes-directory)
         org-use-fast-todo-selection t
@@ -82,7 +84,43 @@ When nil, existing Org files under `eid-notes-directory' are used lightly."
               (directory-files eid-notes-directory t "\\.org\\'"))))
   (add-to-list 'org-modules 'org-habit)
   (add-hook 'org-mode-hook #'visual-line-mode)
-  (add-hook 'org-mode-hook #'flyspell-mode))
+  (add-hook 'org-mode-hook #'flyspell-mode)
+  ;; Evil normal/motion-state RET defaults to evil-ret (move down a line),
+  ;; which shadows Org's RET → org-return → follow link at point. Rebind so
+  ;; RET in an org buffer follows links (when point is on one) or behaves
+  ;; like normal RET otherwise. C-c C-o still works as the canonical
+  ;; "open link at point" binding.
+  (with-eval-after-load 'evil
+    (evil-define-key '(normal motion) org-mode-map
+      (kbd "RET") #'org-return))
+  ;; Custom org link type `outreach:` used by the pipeline digest. RET on
+  ;; an [[outreach:/path/to.txt][label]] link prompts: copy contents to
+  ;; clipboard or open the file. Uses built-in org-link-set-parameters and
+  ;; completing-read — no external package needed.
+  (with-eval-after-load 'org
+    (org-link-set-parameters
+     "outreach"
+     :follow #'eid-research--follow-outreach-link
+     :face '(:foreground "DeepSkyBlue3" :weight bold :underline t))))
+
+(defun eid-research--follow-outreach-link (path _arg)
+  "Handler for `outreach:' org links — prompt to copy contents or open file at PATH."
+  (let ((choice (completing-read
+                 (format "Outreach %s: " (file-name-nondirectory path))
+                 '("copy to clipboard" "open file")
+                 nil t nil nil "copy to clipboard")))
+    (pcase choice
+      ("copy to clipboard"
+       (if (file-readable-p path)
+           (let ((body (with-temp-buffer (insert-file-contents path) (buffer-string))))
+             (kill-new body)
+             (when (eq system-type 'darwin)
+               ;; Also push to macOS system clipboard so paste works outside Emacs.
+               (call-process-region body nil "pbcopy" nil 0))
+             (message "Copied %d chars from %s" (length body) (file-name-nondirectory path)))
+         (user-error "Cannot read outreach file: %s" path)))
+      ("open file"
+       (find-file path)))))
 
 (defun eid-research-configure-citations ()
   "Configure citar and Org citation defaults."
@@ -160,9 +198,9 @@ When nil, existing Org files under `eid-notes-directory' are used lightly."
    "nf" #'org-roam-node-find
    "nI" #'org-roam-node-insert
    "ns" #'org-roam-db-sync
-   "bb" #'eid/research-open-bibliography
-   "bi" #'citar-insert-citation
-   "bo" #'citar-open
+   "cb" #'eid/research-open-bibliography
+   "ci" #'citar-insert-citation
+   "co" #'citar-open
    "pp" #'projectile-switch-project
    "pf" #'projectile-find-file
    "pd" #'eid/research-open-projects

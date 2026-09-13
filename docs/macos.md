@@ -32,6 +32,19 @@ Example `~/.emacs.d/local.el`:
 
 The configuration avoids Linux-only shell assumptions and does not set `HOME`. It works in GUI Emacs, terminal Emacs, and daemon/client sessions.
 
+From this checkout, launch the profile without replacing your existing
+`~/.emacs.d`:
+
+```sh
+./bin/eid-emacs-macos
+```
+
+Equivalent manual command:
+
+```sh
+open -na /Applications/Emacs.app --args --init-directory "$PWD"
+```
+
 For daemon use:
 
 ```sh

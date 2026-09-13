@@ -20,6 +20,7 @@
 
 (require 'eid-platform)
 (require 'eid-private)
+(require 'eid-ui)
 (require 'eid-leader)
 (require 'eid-research)
 (require 'eid-ai)
@@ -69,6 +70,8 @@ overrides.  They are intentionally ignored by git."
     (when (file-exists-p file)
       (load file nil 'nomessage))))
 
+(eid-private-load-config)
+(eid/load-local-configs)
 (eid/platform-apply-defaults)
 (eid/bootstrap-straight)
 (straight-use-package 'use-package)
@@ -77,8 +80,7 @@ overrides.  They are intentionally ignored by git."
 (setq straight-use-package-by-default t
       use-package-always-defer t)
 
-(eid-private-load-config)
-(eid/load-local-configs)
+(eid-ui-apply-frame-defaults)
 
 (defmacro eid/use-package (&rest args)
   "Evaluate a use-package declaration ARGS at runtime.
@@ -91,6 +93,21 @@ still using regular use-package declarations after straight.el is bootstrapped."
   :defer t
   :init
   (eid-research-configure-org))
+
+(eid/use-package org-superstar
+  :after org
+  :hook (org-mode . org-superstar-mode))
+
+(eid/use-package evil-org
+  :after (evil org)
+  :hook (org-mode . evil-org-mode)
+  :config
+  ;; Vim-style motions/text-objects in Org: gj/gk, ]]/[[ heading motions,
+  ;; heading/list text objects, etc.  Keeps the setup's Vim-first principle.
+  (evil-org-set-key-theme
+   '(navigation insert textobjects additional calendar))
+  (require 'evil-org-agenda)
+  (evil-org-agenda-set-keys))
 
 (eid/use-package evil
   :demand t
@@ -121,11 +138,40 @@ still using regular use-package declarations after straight.el is bootstrapped."
   (which-key-mode 1)
   (eid/leader-register-which-key-labels))
 
+(eid/use-package doom-themes
+  :demand t
+  :config
+  (setq doom-themes-enable-bold t
+        doom-themes-enable-italic t)
+  (eid-ui-load-theme)
+  (doom-themes-visual-bell-config)
+  (doom-themes-org-config))
+
+(eid/use-package doom-modeline
+  :demand t
+  :config
+  (doom-modeline-mode 1))
+
 (eid/use-package transient :defer t)
 (eid/use-package undo-tree
-  :after evil
+  :demand t
+  :init
+  ;; Keep undo history out of the working tree: by default undo-tree drops a
+  ;; *.~undo-tree~ file next to every edited file. Stash it all in one dir.
+  (let ((dir (expand-file-name "undo-tree-history/" user-emacs-directory)))
+    (make-directory dir t)
+    (setq undo-tree-history-directory-alist `(("." . ,dir))))
   :config
-  (global-undo-tree-mode 1))
+  (global-undo-tree-mode 1)
+  ;; Bind u / C-r straight to undo-tree in Evil normal state — this is the old,
+  ;; known-working setup from README.org. Relying on evil-undo-system dispatch
+  ;; alone was flaky (u/C-r didn't behave Vim-like).
+  (define-key evil-normal-state-map (kbd "u")   #'undo-tree-undo)
+  (define-key evil-normal-state-map (kbd "C-r") #'undo-tree-redo)
+  ;; Non-file buffers (*scratch*, dashboards, …) don't get undo-tree from the
+  ;; global mode's file trigger, so turn it on whenever Evil turns on — this is
+  ;; the fix undo-tree's own error message recommends.
+  (add-hook 'evil-local-mode-hook #'turn-on-undo-tree-mode))
 (eid/use-package consult :defer t)
 (eid/use-package vertico
   :init
@@ -141,6 +187,15 @@ still using regular use-package declarations after straight.el is bootstrapped."
 (eid/use-package company
   :hook (after-init . global-company-mode))
 (eid/use-package magit :defer t)
+(eid/use-package eyebrowse
+  :demand t
+  :config
+  (eyebrowse-mode 1)
+  (setq eyebrowse-new-workspace t)
+  (define-key eyebrowse-mode-map (kbd "C-w j") #'eyebrowse-switch-to-window-config-1)
+  (define-key eyebrowse-mode-map (kbd "C-w k") #'eyebrowse-switch-to-window-config-2)
+  (define-key eyebrowse-mode-map (kbd "C-w l") #'eyebrowse-switch-to-window-config-3)
+  (define-key eyebrowse-mode-map (kbd "C-w ;") #'eyebrowse-switch-to-window-config-4))
 (eid/use-package projectile
   :init
   (projectile-mode 1))
@@ -208,3 +263,4 @@ still using regular use-package declarations after straight.el is bootstrapped."
 
 (provide 'init)
 ;;; init.el ends here
+(load "~/.openclaw/workspace/skills/pipeline/emacs/openclaw-org.el")

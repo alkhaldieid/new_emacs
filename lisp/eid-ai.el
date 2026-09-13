@@ -16,6 +16,7 @@
 (declare-function gptel-request "gptel" (&optional prompt &rest args))
 (declare-function gptel-make-openai "gptel-openai" (name &rest args))
 (declare-function gptel-make-anthropic "gptel-anthropic" (name &rest args))
+(declare-function markdown-mode "markdown-mode" ())
 (declare-function org-back-to-heading "org" (&optional invisible-ok))
 (declare-function org-end-of-subtree "org" (&optional invisible-ok to-heading))
 
@@ -71,6 +72,11 @@ Supported values are `openai' and `anthropic'."
   :type 'directory
   :group 'eid-ai)
 
+(defcustom eid-ai-show-prompt-buffers t
+  "When non-nil, keep a debug buffer with the exact prompt sent to the model."
+  :type 'boolean
+  :group 'eid-ai)
+
 (defvar eid-ai--backends nil
   "Alist mapping provider symbols to gptel backend objects.")
 
@@ -115,6 +121,9 @@ Supported values are `openai' and `anthropic'."
 
 (defun eid-ai-setup ()
   "Configure gptel backends and defaults."
+  (require 'gptel)
+  (require 'gptel-openai)
+  (require 'gptel-anthropic)
   (eid-ai-configure-backends)
   (setq gptel-temperature eid-ai-temperature
         gptel-max-tokens eid-ai-max-tokens
@@ -151,6 +160,18 @@ When QUIET is non-nil, do not message."
   (unless quiet
     (message "AI provider: %s, model: %s" provider gptel-model)))
 
+(defun eid-ai--ensure-gptel ()
+  "Require and configure gptel before running an AI command."
+  (unless (featurep 'gptel)
+    (require 'gptel nil t))
+  (unless (featurep 'gptel-openai)
+    (require 'gptel-openai nil t))
+  (unless (featurep 'gptel-anthropic)
+    (require 'gptel-anthropic nil t))
+  (unless (fboundp 'gptel-request)
+    (user-error "gptel is not installed or could not be loaded"))
+  (eid-ai-setup))
+
 (defun eid-ai--template (file fallback)
   "Return prompt template FILE from `eid-ai-prompt-directory' or FALLBACK."
   (let ((path (expand-file-name file eid-ai-prompt-directory)))
@@ -186,6 +207,20 @@ The return value is (BEG END KIND)."
           :text (buffer-substring-no-properties beg end)
           :buffer (buffer-name))))
 
+(defun eid-ai--prompt-buffer (title prompt)
+  "Store PROMPT for TITLE in a debug buffer."
+  (when eid-ai-show-prompt-buffers
+    (let ((buffer (get-buffer-create (format "*eid-ai-prompt-%s*" title))))
+      (with-current-buffer buffer
+        (let ((inhibit-read-only t))
+          (erase-buffer)
+          (insert prompt)
+          (goto-char (point-min))
+          (if (fboundp 'markdown-mode)
+              (markdown-mode)
+            (text-mode))))
+      buffer)))
+
 (defun eid-ai--response-buffer (title)
   "Return a clean response buffer for TITLE."
   (let ((buffer (get-buffer-create (format "*eid-ai-%s*" title))))
@@ -202,8 +237,7 @@ The return value is (BEG END KIND)."
 
 The response is inserted in a dedicated Org buffer."
   (interactive "sTitle: \nsInstruction: ")
-  (unless (fboundp 'gptel-request)
-    (user-error "Install/load gptel before using Eid AI commands"))
+  (eid-ai--ensure-gptel)
   (eid-ai-switch-provider eid-ai-default-provider t)
   (let* ((context (eid-ai--context-text))
          (body (or text (plist-get context :text)))
@@ -213,9 +247,14 @@ The response is inserted in a dedicated Org buffer."
                          (plist-get context :kind)
                          body))
          (buffer (eid-ai--response-buffer title)))
+    (when (string-empty-p (string-trim body))
+      (user-error "No text found to send. Select a region or write notes in the current buffer"))
+    (eid-ai--prompt-buffer title prompt)
     (with-current-buffer buffer
       (goto-char (point-max))
-      (insert "Request sent to " (symbol-name eid-ai-default-provider) ".\n\n"))
+      (insert (format "Generating with %s. Prompt saved in *eid-ai-prompt-%s*.\n\n"
+                      (symbol-name eid-ai-default-provider)
+                      title)))
     (pop-to-buffer buffer)
     (gptel-request prompt
       :buffer buffer
@@ -235,8 +274,7 @@ The response is inserted in a dedicated Org buffer."
 (defun eid-ai-chat ()
   "Open a gptel chat buffer."
   (interactive)
-  (unless (fboundp 'gptel)
-    (user-error "Install/load gptel before opening AI chat"))
+  (eid-ai--ensure-gptel)
   (eid-ai-switch-provider eid-ai-default-provider t)
   (call-interactively #'gptel))
 
@@ -282,12 +320,13 @@ The response is inserted in a dedicated Org buffer."
    "Convert the supplied rough notes into a polished research memo with executive summary, background, analysis, risks, evidence gaps, and next actions."))
 
 (defun eid-ai-linkedin-draft ()
-  "Convert selected material into a LinkedIn draft with guardrails."
+  "Generate a complete LinkedIn post from selected ideas."
   (interactive)
-  (eid-ai--run-template
+  (eid-ai-request
    "LinkedIn Draft"
-   "linkedin-refine.md"
-   "Convert the supplied material into a polished LinkedIn draft. Apply confidentiality guardrails: no current-employer confidential detail, no client names unless public, no private contact data, no CV-only commercial metrics, no internal project names, no prompt leakage, and no overclaiming."))
+   (eid-ai--template
+    "linkedin-refine.md"
+    "Generate a complete ready-to-publish LinkedIn post from the supplied rough ideas. Start with the post itself. Do not return only a checklist. Include alternative hooks, evidence gaps, publication risks, and restrained hashtags after the post.")))
 
 (defun eid-ai-website-article-draft ()
   "Convert selected material into a website article draft."

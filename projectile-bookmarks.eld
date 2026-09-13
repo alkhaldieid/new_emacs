@@ -1,0 +1,1 @@
+("~/Research/llm-systems-knowledge/" "~/.openclaw/workspace/" "~/idfa-website/" "~/signal-pipeline/" "~/Codex/2026-05-22/you-are-a-senior-emacs-lisp/" "~/gcc-legal-kms/")

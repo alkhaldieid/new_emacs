@@ -1,0 +1,11 @@
+#!/usr/bin/env sh
+set -eu
+
+CONFIG_DIR="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
+EMACS_APP="/Applications/Emacs.app"
+
+if [ -d "$EMACS_APP" ]; then
+  open -na "$EMACS_APP" --args --init-directory "$CONFIG_DIR"
+else
+  exec emacs --init-directory "$CONFIG_DIR"
+fi
